@@ -2,41 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* מערכת עיצוב לאפליקציית חיסכון בחשמל - צבעים ועיצוב ישראלי נקי */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* צבעי רקע ובסיס */
+    --background: 210 20% 98%;
+    --foreground: 220 15% 15%;
 
+    /* כרטיסיות ופופ-אפים */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 220 15% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 15% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* צבעי מותג - כחול ואמינות */
+    --primary: 210 85% 45%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 210 85% 60%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* ירוק חיסכון */
+    --secondary: 140 60% 50%;
+    --secondary-foreground: 0 0% 98%;
+    --success: 140 70% 45%;
+    --success-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* צבעי עזר */
+    --muted: 210 25% 95%;
+    --muted-foreground: 220 15% 50%;
+    --accent: 210 50% 92%;
+    --accent-foreground: 220 15% 25%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* שגיאות */
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* גבולות וקלטים */
+    --border: 210 25% 88%;
+    --input: 210 25% 92%;
+    --ring: 210 85% 45%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* גרדיאנטים יפים */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--secondary)));
+    --gradient-bg: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
 
-    --radius: 0.5rem;
+    /* צללים אלגנטיים */
+    --shadow-card: 0 4px 20px -2px hsl(var(--primary) / 0.1);
+    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.2);
+
+    /* אנימציות חלקות */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
