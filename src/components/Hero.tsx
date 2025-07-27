@@ -1,71 +1,82 @@
 import { Button } from "@/components/ui/button";
-import { Zap, Calculator, TrendingDown } from "lucide-react";
+import { Calculator, FileText, Zap } from "lucide-react";
 import heroImage from "@/assets/hero-electricity.jpg";
 
-const Hero = () => {
+interface HeroProps {
+  onStartCalculation: () => void;
+  onShowInstructions: () => void;
+}
+
+const Hero = ({ onStartCalculation, onShowInstructions }: HeroProps) => {
   return (
-    <div className="relative min-h-[80vh] bg-gradient-bg overflow-hidden">
+    <div className="relative bg-gradient-bg border-b border-border">
       {/* רקע עם תמונה */}
       <div className="absolute inset-0">
         <img 
           src={heroImage} 
           alt="מונה חשמל חכם" 
-          className="w-full h-full object-cover opacity-20"
+          className="w-full h-full object-cover opacity-15"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-success/10" />
       </div>
 
       {/* תוכן */}
-      <div className="relative container mx-auto px-6 py-20 text-center">
-        <div className="max-w-4xl mx-auto">
+      <div className="relative container mx-auto px-6 py-16">
+        <div className="max-w-4xl mx-auto text-center">
           {/* כותרת ראשית */}
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            בחר את המסלול החכם
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+            מחשבון מסלולי חשמל
             <span className="bg-gradient-primary bg-clip-text text-transparent block">
-              וחסוך בחשמל
+              מצא את המסלול הכי משתלם
             </span>
           </h1>
 
           {/* תת כותרת */}
-          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
-            העלה את דוח הצריכה שלך ותגלה איזה מסלול במונה החכם יחסוך לך הכי הרבה כסף
+          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            העלה דוח צריכה או הגדר מסלול מותאם אישית - תדע מיד איזה מסלול יחסוך לך הכי הרבה כסף
           </p>
 
           {/* כפתורי פעולה */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Button variant="hero" size="lg">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Button variant="hero" onClick={onStartCalculation}>
               <Calculator className="w-5 h-5" />
-              התחל לחסוך עכשיו
+              התחל חישוב
             </Button>
-            <Button variant="outline" size="lg">
-              איך זה עובד?
+            <Button variant="outline" onClick={onShowInstructions}>
+              <FileText className="w-5 h-5" />
+              איך מוציאים דוח צריכה?
             </Button>
           </div>
 
-          {/* סטטיסטיקות */}
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-card/60 backdrop-blur-sm rounded-xl p-6 border border-border shadow-card">
-              <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-                <TrendingDown className="w-6 h-6 text-primary-foreground" />
+          {/* פיצ'רים מהירים */}
+          <div className="grid sm:grid-cols-3 gap-6">
+            <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
+              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                <Calculator className="w-5 h-5 text-primary-foreground" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">עד 20%</h3>
-              <p className="text-muted-foreground">חיסכון בחשבון החשמל</p>
+              <div className="text-right">
+                <h3 className="font-semibold text-foreground">חישוב מיידי</h3>
+                <p className="text-sm text-muted-foreground">תוצאות תוך שניות</p>
+              </div>
             </div>
 
-            <div className="bg-card/60 backdrop-blur-sm rounded-xl p-6 border border-border shadow-card">
-              <div className="w-12 h-12 bg-gradient-success rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-6 h-6 text-success-foreground" />
+            <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
+              <div className="w-10 h-10 bg-gradient-success rounded-lg flex items-center justify-center flex-shrink-0">
+                <Zap className="w-5 h-5 text-success-foreground" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">3 מסלולים</h3>
-              <p className="text-muted-foreground">להתאמה אישית</p>
+              <div className="text-right">
+                <h3 className="font-semibold text-foreground">מסלול מותאם</h3>
+                <p className="text-sm text-muted-foreground">הגדר מסלול משלך</p>
+              </div>
             </div>
 
-            <div className="bg-card/60 backdrop-blur-sm rounded-xl p-6 border border-border shadow-card">
-              <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Calculator className="w-6 h-6 text-primary-foreground" />
+            <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
+              <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-muted-foreground" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">חישוב מיידי</h3>
-              <p className="text-muted-foreground">תוצאות תוך שניות</p>
+              <div className="text-right">
+                <h3 className="font-semibold text-foreground">ללא רישום</h3>
+                <p className="text-sm text-muted-foreground">משתמש ישירות</p>
+              </div>
             </div>
           </div>
         </div>
