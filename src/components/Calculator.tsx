@@ -57,12 +57,19 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
 
           const consumption = parseFloat(row['צריכה מהרשת (קוט"ש)'] || row['Consumption'] || row['consumption'] || '0');
           
-          return {
+          const result = {
             date,
             consumption,
             hour: date.getHours(),
             dayOfWeek: date.getDay() // 0 = Sunday, 6 = Saturday
           };
+          
+          // Debug log for first few items
+          if (parsed?.length < 5) {
+            console.log('Parsed item:', result, 'Date string:', dateString);
+          }
+          
+          return result;
         }).filter(item => !isNaN(item.consumption) && item.consumption > 0);
 
         resolve(parsed);
@@ -72,7 +79,7 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
   };
 
   const calculatePlanCost = (data: ConsumptionData[], discountRate: number, timeCondition?: (hour: number, dayOfWeek: number) => boolean): number => {
-    const baseRate = 0.6; // תעריף בסיס ל-kWh (אפשר להתאים)
+    const baseRate = 0.64; // תעריף בסיס ל-kWh
     
     return data.reduce((total, item) => {
       let rate = baseRate;
@@ -99,7 +106,7 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
         throw new Error("לא נמצאו נתוני צריכה בקובץ");
       }
 
-      const baseCost = data.reduce((total, item) => total + (item.consumption * 0.6), 0);
+      const baseCost = data.reduce((total, item) => total + (item.consumption * 0.64), 0);
       
       const plans: PlanResult[] = [];
 
@@ -277,7 +284,6 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                       <TableHead className="text-right">עלות חודשית</TableHead>
                       <TableHead className="text-right">חיסכון</TableHead>
                       <TableHead className="text-right">אחוז חיסכון</TableHead>
-                      <TableHead>סטטוס</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -287,6 +293,12 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                           <div className="flex items-center gap-2">
                             {plan.icon}
                             {plan.name}
+                            {plan === bestPlan && index > 0 && (
+                              <Badge variant="default" className="ml-2">מומלץ</Badge>
+                            )}
+                            {index === 0 && (
+                              <Badge variant="outline" className="ml-2">בסיס</Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
@@ -311,14 +323,6 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                             </span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {plan === bestPlan && index > 0 && (
-                            <Badge variant="default">מומלץ</Badge>
-                          )}
-                          {index === 0 && (
-                            <Badge variant="outline">בסיס</Badge>
                           )}
                         </TableCell>
                       </TableRow>
