@@ -191,7 +191,12 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
 
   const getBestPlan = () => {
     if (results.length <= 1) return null;
-    return results[1]; // Skip the "regular" plan (index 0)
+    // Find the plan with the highest savings (excluding the base plan)
+    const plansWithSavings = results.filter(plan => plan.savings > 0);
+    if (plansWithSavings.length === 0) return null;
+    return plansWithSavings.reduce((best, current) => 
+      current.savings > best.savings ? current : best
+    );
   };
 
   const bestPlan = getBestPlan();
