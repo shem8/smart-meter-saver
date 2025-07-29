@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Hero from "@/components/Hero";
 import FileUpload from "@/components/FileUpload";
 import HowToGetReport from "@/components/HowToGetReport";
@@ -34,6 +34,7 @@ const Index = () => {
   const [showCustomPlan, setShowCustomPlan] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const fileUploadRef = useRef<HTMLDivElement>(null);
 
   const predefinedPlans = [
     {
@@ -111,10 +112,17 @@ const Index = () => {
     setShowCustomPlan(false);
   };
 
+  const handleStartCalculation = () => {
+    fileUploadRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Hero
-        onStartCalculation={() => {}}
+        onStartCalculation={handleStartCalculation}
         onShowInstructions={() => setShowInstructions(true)}
       />
 
@@ -255,7 +263,7 @@ const Index = () => {
 
         {/* File Upload Section */}
         {!showResults && (
-          <section>
+          <section ref={fileUploadRef}>
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-foreground mb-4">
                 העלה את דוח הצריכה שלך
