@@ -12,9 +12,9 @@ const Hero = ({ onStartCalculation, onShowInstructions }: HeroProps) => {
     <div className="relative bg-gradient-bg border-b border-border">
       {/* רקע עם תמונה */}
       <div className="absolute inset-0">
-        <img 
-          src={heroImage} 
-          alt="מונה חשמל חכם" 
+        <img
+          src={heroImage}
+          alt="מונה חשמל חכם"
           className="w-full h-full object-cover opacity-15"
         />
       </div>
@@ -32,7 +32,8 @@ const Hero = ({ onStartCalculation, onShowInstructions }: HeroProps) => {
 
           {/* תת כותרת */}
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            העלה דוח צריכה או הגדר מסלול מותאם אישית - תדע מיד איזה מסלול יחסוך לך הכי הרבה כסף
+            העלה דוח צריכה או הגדר מסלול מותאם אישית - תדע מיד איזה מסלול יחסוך
+            לך הכי הרבה כסף
           </p>
 
           {/* כפתורי פעולה */}
@@ -45,39 +46,6 @@ const Hero = ({ onStartCalculation, onShowInstructions }: HeroProps) => {
               <FileText className="w-5 h-5" />
               איך מוציאים דוח צריכה?
             </Button>
-          </div>
-
-          {/* פיצ'רים מהירים */}
-          <div className="grid sm:grid-cols-3 gap-6">
-            <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                <Calculator className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div className="text-right">
-                <h3 className="font-semibold text-foreground">חישוב מיידי</h3>
-                <p className="text-sm text-muted-foreground">תוצאות תוך שניות</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
-              <div className="w-10 h-10 bg-gradient-success rounded-lg flex items-center justify-center flex-shrink-0">
-                <Zap className="w-5 h-5 text-success-foreground" />
-              </div>
-              <div className="text-right">
-                <h3 className="font-semibold text-foreground">מסלול מותאם</h3>
-                <p className="text-sm text-muted-foreground">הגדר מסלול משלך</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm rounded-lg p-4 border border-border">
-              <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div className="text-right">
-                <h3 className="font-semibold text-foreground">ללא רישום</h3>
-                <p className="text-sm text-muted-foreground">משתמש ישירות</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

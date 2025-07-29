@@ -119,5 +119,18 @@
 
   body {
     @apply bg-background text-foreground;
+    direction: rtl;
+    text-align: right;
+  }
+
+  /* RTL support for tables */
+  table {
+    direction: rtl;
+  }
+
+  /* RTL support for form elements */
+  input, textarea, select {
+    direction: rtl;
+    text-align: right;
   }
 }
