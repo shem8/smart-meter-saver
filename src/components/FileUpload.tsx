@@ -192,10 +192,6 @@ const FileUpload = ({ onFileSelect }: FileUploadProps) => {
 
           <Card className="p-6 border-2 border-secondary/20 bg-secondary/5 hover:bg-secondary/10 transition-colors">
             <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-                <Download className="w-8 h-8 text-secondary-foreground" />
-              </div>
-
               <h3 className="text-lg font-semibold text-foreground mb-2">
                 נסה עם קובץ דוגמה
               </h3>
