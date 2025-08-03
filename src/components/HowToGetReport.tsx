@@ -1,32 +1,30 @@
 import { Card } from "@/components/ui/card";
-import { Monitor, FileText, AlertCircle } from "lucide-react";
+import { Monitor, FileText, AlertCircle, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const HowToGetReport = () => {
+  const handleDownloadExample = () => {
+    const link = document.createElement("a");
+    link.href = "/example.csv";
+    link.download = "example-consumption-report.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center mb-8">
         <h3 className="text-2xl font-bold text-foreground mb-4">
           איך מוציאים דוח צריכה?
         </h3>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          אפשר להוציא אותו בקלות דרך האתר של חברת החשמל, אתה נכנס לחשבון שלך,
-          מבקש דוח במייל, ממלא את המייל שלך ואחרי כמה דקות מקבל מייל עם הקובץ
-          csv
-        </p>
       </div>
 
       {/* הוראות עיקריות */}
       <div className="max-w-3xl mx-auto">
         <Card className="p-8 bg-gradient-to-r from-primary/5 to-success/5 border border-primary/20">
           <div className="text-center space-y-6">
-            <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto">
-              <Monitor className="w-8 h-8 text-primary-foreground" />
-            </div>
-
             <div>
-              <h3 className="text-xl font-semibold text-foreground mb-4">
-                צעדים פשוטים:
-              </h3>
               <ol className="space-y-3 text-lg text-foreground">
                 <li className="flex items-center justify-center gap-3">
                   <span className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
@@ -62,6 +60,31 @@ const HowToGetReport = () => {
                 </span>
               </div>
             </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* דוגמה להורדה */}
+      <div className="max-w-2xl mx-auto">
+        <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground">
+                רוצה לראות איך הקובץ אמור להיראות?
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                הורד את קובץ הדוגמה כדי לראות את הפורמט הנכון
+              </p>
+            </div>
+
+            <Button
+              onClick={handleDownloadExample}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              הורד דוגמה
+            </Button>
           </div>
         </Card>
       </div>
