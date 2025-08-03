@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import * as XLSX from "xlsx";
 import {
   Card,
   CardContent,
@@ -20,371 +19,52 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Calculator as CalculatorIcon,
-  TrendingDown,
-  Clock,
   Sun,
   Moon,
   Users,
   TrendingUp,
+  Clock,
+  User,
+  MapPin,
+  Hash,
 } from "lucide-react";
-
-interface ConsumptionData {
-  date: Date;
-  consumption: number;
-  hour: number;
-  dayOfWeek: number;
-}
-
-interface PlanResult {
-  name: string;
-  totalCost: number;
-  savings: number;
-  savingsPercentage: number;
-  icon: React.ReactNode;
-  description: string;
-}
+import { parseFile, ConsumptionData, FileMetadata } from "@/lib/fileParser";
+import {
+  calculateResults,
+  getBestPlan,
+  PlanResult,
+  CustomPlan,
+} from "@/lib/calculatorLogic";
 
 interface CalculatorProps {
   file: File;
   selectedPlan?: string;
-  customPlans?: any[];
+  customPlans?: CustomPlan[];
 }
 
 const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
   const [results, setResults] = useState<PlanResult[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [consumptionData, setConsumptionData] = useState<ConsumptionData[]>([]);
+  const [metadata, setMetadata] = useState<FileMetadata | null>(null);
 
-  const parseFile = async (file: File): Promise<ConsumptionData[]> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        const parsed: ConsumptionData[] = jsonData
-          .map((row: any, index: number) => {
-            // Parse the date - try multiple approaches
-            let date: Date;
-            const dateString =
-              row["תאריך התחלת הקריאה"] ||
-              row["תאריך"] ||
-              row["Date"] ||
-              row["date"] ||
-              row["תאריך קריאה"] ||
-              row["זמן"] ||
-              row["Time"] ||
-              row["time"];
-
-            if (dateString) {
-              // Check if it's an Excel serial number (numeric value)
-              if (
-                typeof dateString === "number" ||
-                !isNaN(Number(dateString))
-              ) {
-                const excelSerialNumber = Number(dateString);
-
-                // Excel's epoch is January 1, 1900, but it incorrectly treats 1900 as a leap year
-                // So we need to adjust for this
-                const excelEpoch = new Date(1900, 0, 1);
-                const millisecondsPerDay = 24 * 60 * 60 * 1000;
-
-                // Subtract 2 days to account for Excel's leap year bug
-                const adjustedDays = excelSerialNumber - 2;
-                const totalMilliseconds = adjustedDays * millisecondsPerDay;
-
-                date = new Date(excelEpoch.getTime() + totalMilliseconds);
-              } else {
-                // Try to parse as a regular date string
-                date = new Date(dateString);
-              }
-
-              // Check if the date is valid
-              if (isNaN(date.getTime())) {
-                console.warn(
-                  "Invalid date parsed:",
-                  dateString,
-                  "Falling back to current date"
-                );
-                date = new Date();
-              }
-            } else {
-              console.warn("No date found in row, using current date");
-              date = new Date();
-            }
-
-            const consumption = parseFloat(
-              row['צריכה מהרשת (קוט"ש)'] ||
-                row["צריכה"] ||
-                row["Consumption"] ||
-                row["consumption"] ||
-                row["קוטש"] ||
-                row["kWh"] ||
-                "0"
-            );
-
-            // Calculate day of week based on Israel time zone
-            const jerusalemDate = new Date(
-              date.toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })
-            );
-            const dayOfWeek = jerusalemDate.getDay(); // Sunday = 0
-
-            const result = {
-              date,
-              consumption,
-              hour: date.getHours(),
-              dayOfWeek: dayOfWeek,
-            };
-
-            return result;
-          })
-          .filter((item) => !isNaN(item.consumption) && item.consumption > 0);
-
-        resolve(parsed);
-      };
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  const calculatePlanCost = (
-    data: ConsumptionData[],
-    discountRate: number,
-    timeCondition?: (hour: number, dayOfWeek: number) => boolean
-  ): number => {
-    const baseRate = 0.64; // תעריף בסיס ל-kWh
-
-    return data.reduce((total, item) => {
-      let rate = baseRate;
-
-      if (timeCondition && timeCondition(item.hour, item.dayOfWeek)) {
-        rate = baseRate * (1 - discountRate);
-      } else if (!timeCondition) {
-        // הנחה קבועה
-        rate = baseRate * (1 - discountRate);
-      }
-
-      return total + item.consumption * rate;
-    }, 0);
-  };
-
-  const calculateResults = useCallback(async () => {
+  const calculateResultsCallback = useCallback(async () => {
     setIsCalculating(true);
 
     try {
-      const data = await parseFile(file);
+      const parsedData = await parseFile(file);
 
-      // בדיקה: אילו שורות מסומנות כהנחה לילית
-      const nightRows = data.filter((item) => {
-        const isWeekday = item.dayOfWeek >= 0 && item.dayOfWeek <= 4; // Sunday–Thursday
-        const isNightHour = item.hour >= 23 || item.hour < 7;
-        return isWeekday && isNightHour;
-      });
-
-      // סכום הצריכה בלילה
-      const totalNightConsumption = nightRows.reduce(
-        (sum, item) => sum + item.consumption,
-        0
-      );
-      console.log("Total night discount rows:", nightRows.length);
-      console.log(
-        "Total night consumption (kWh):",
-        totalNightConsumption.toFixed(3)
-      );
-
-      // הצג דוגמה של כמה שורות
-      nightRows.slice(0, 5).forEach((item, index) => {
-        console.log(`Night row #${index + 1}:`, {
-          date: item.date.toISOString(),
-          hour: item.hour,
-          dayOfWeek: item.dayOfWeek,
-          consumption: item.consumption,
-        });
-      });
-
-      setConsumptionData(data);
-
-      if (data.length === 0) {
+      if (parsedData.consumptionData.length === 0) {
         throw new Error("לא נמצאו נתוני צריכה בקובץ");
       }
 
-      // Calculate data distribution for internal use
-
-      const baseCost = data.reduce(
-        (total, item) => total + item.consumption * 0.64,
-        0
+      setConsumptionData(parsedData.consumptionData);
+      setMetadata(parsedData.metadata);
+      const calculatedResults = await calculateResults(
+        parsedData.consumptionData,
+        customPlans
       );
-
-      const plans: PlanResult[] = [];
-
-      // תעריף רגיל (ללא הנחה) - בסיס להשוואה
-      plans.push({
-        name: "תעריף רגיל",
-        totalCost: baseCost,
-        savings: 0,
-        savingsPercentage: 0,
-        icon: <CalculatorIcon className="h-5 w-5" />,
-        description: "ללא הנחה",
-      });
-
-      // Calculate day plan with 15% discount on weekdays 7-17
-      let dayPlanTotalCost = 0;
-      let discountAppliedCount = 0;
-      let totalItems = 0;
-
-      data.forEach((item) => {
-        const isWeekday = item.dayOfWeek >= 0 && item.dayOfWeek <= 4; // Sunday = 0, Thursday = 4
-        const isDayTime = item.hour >= 7 && item.hour < 17; // 7 AM to 5 PM
-        const shouldApplyDiscount = isWeekday && isDayTime;
-
-        if (shouldApplyDiscount) {
-          discountAppliedCount++;
-        }
-        totalItems++;
-
-        const rate = shouldApplyDiscount ? 0.64 * 0.85 : 0.64; // 15% discount or regular rate
-        dayPlanTotalCost += item.consumption * rate;
-      });
-
-      plans.push({
-        name: "הנחה יומית 15%",
-        totalCost: dayPlanTotalCost,
-        savings: baseCost - dayPlanTotalCost,
-        savingsPercentage: ((baseCost - dayPlanTotalCost) / baseCost) * 100,
-        icon: <Sun className="h-5 w-5" />,
-        description: "ימות השבוע 07:00-17:00",
-      });
-
-      // Calculate night plan with 20% discount on weekdays 23:00-7:00
-      let nightPlanTotalCost = 0;
-      let nightDiscountAppliedCount = 0;
-
-      data.forEach((item) => {
-        const isWeekday = item.dayOfWeek >= 0 && item.dayOfWeek <= 4; // Sunday = 0, Thursday = 4
-        const isNightTime = item.hour >= 23 || item.hour < 7; // 11 PM to 7 AM
-        const shouldApplyDiscount = isWeekday && isNightTime;
-
-        if (shouldApplyDiscount) {
-          nightDiscountAppliedCount++;
-        }
-
-        const rate = shouldApplyDiscount ? 0.64 * 0.8 : 0.64; // 20% discount or regular rate
-        nightPlanTotalCost += item.consumption * rate;
-      });
-
-      const nightDiscountCost = nightPlanTotalCost;
-      plans.push({
-        name: "הנחה לילית 20%",
-        totalCost: nightDiscountCost,
-        savings: baseCost - nightDiscountCost,
-        savingsPercentage: ((baseCost - nightDiscountCost) / baseCost) * 100,
-        icon: <Moon className="h-5 w-5" />,
-        description: "כל הלילה 23:00-07:00",
-      });
-
-      // Calculate family plan with 18% discount on weekdays 14:00-20:00
-      let familyPlanTotalCost = 0;
-      let familyDiscountAppliedCount = 0;
-
-      data.forEach((item) => {
-        const isWeekday = item.dayOfWeek >= 0 && item.dayOfWeek <= 4; // Sunday = 0, Thursday = 4
-        const isFamilyTime = item.hour >= 14 && item.hour < 20; // 2 PM to 8 PM
-        const shouldApplyDiscount = isWeekday && isFamilyTime;
-
-        if (shouldApplyDiscount) {
-          familyDiscountAppliedCount++;
-        }
-
-        const rate = shouldApplyDiscount ? 0.64 * 0.82 : 0.64; // 18% discount or regular rate
-        familyPlanTotalCost += item.consumption * rate;
-      });
-
-      plans.push({
-        name: "חוסכים למשפחה 18%",
-        totalCost: familyPlanTotalCost,
-        savings: baseCost - familyPlanTotalCost,
-        savingsPercentage: ((baseCost - familyPlanTotalCost) / baseCost) * 100,
-        icon: <Users className="h-5 w-5" />,
-        description: "ימות השבוע 14:00-20:00",
-      });
-
-      // Calculate consumption-based discount plan (up to 10% based on monthly consumption)
-      const monthlyConsumption = data.reduce(
-        (total, item) => total + item.consumption,
-        0
-      );
-      const monthlyCost = monthlyConsumption * 0.64;
-
-      let consumptionDiscountRate = 0;
-      if (monthlyCost <= 149) {
-        consumptionDiscountRate = 0.1; // 10% discount
-      } else if (monthlyCost <= 199) {
-        consumptionDiscountRate = 0.08; // 8% discount
-      } else if (monthlyCost <= 299) {
-        consumptionDiscountRate = 0.06; // 6% discount
-      } else {
-        consumptionDiscountRate = 0.05; // 5% discount
-      }
-
-      const consumptionBasedCost = baseCost * (1 - consumptionDiscountRate);
-
-      plans.push({
-        name: "חשבון קטן הנחה גדולה",
-        totalCost: consumptionBasedCost,
-        savings: baseCost - consumptionBasedCost,
-        savingsPercentage: ((baseCost - consumptionBasedCost) / baseCost) * 100,
-        icon: <TrendingUp className="h-5 w-5" />,
-        description: `${consumptionDiscountRate * 100}% הנחה לפי צריכה חודשית`,
-      });
-
-      // Add custom plans if any
-      if (customPlans && customPlans.length > 0) {
-        customPlans.forEach((customPlan) => {
-          // Convert day string IDs to numeric values
-          const dayMapping: { [key: string]: number } = {
-            sun: 0, // Sunday
-            mon: 1, // Monday
-            tue: 2, // Tuesday
-            wed: 3, // Wednesday
-            thu: 4, // Thursday
-            fri: 5, // Friday
-            sat: 6, // Saturday
-          };
-
-          const customCost = calculatePlanCost(
-            data,
-            customPlan.discount / 100,
-            (hour, dayOfWeek) => {
-              const isInTimeRange =
-                hour >= customPlan.startHour && hour < customPlan.endHour;
-              const isInDayRange = customPlan.days.some(
-                (dayId: string) => dayMapping[dayId] === dayOfWeek
-              );
-              return isInTimeRange && isInDayRange;
-            }
-          );
-
-          plans.push({
-            name: customPlan.name,
-            totalCost: customCost,
-            savings: baseCost - customCost,
-            savingsPercentage: ((baseCost - customCost) / baseCost) * 100,
-            icon: <Clock className="h-5 w-5" />,
-            description: `הנחה ${customPlan.discount}% - ${customPlan.startHour}:00-${customPlan.endHour}:00`,
-          });
-        });
-      }
-
-      // Sort by total cost, but keep תעריף רגיל first
-      plans.sort((a, b) => {
-        if (a.name === "תעריף רגיל") return -1;
-        if (b.name === "תעריף רגיל") return 1;
-        return a.totalCost - b.totalCost;
-      });
-
-      setResults(plans);
+      setResults(calculatedResults);
     } catch (error) {
       console.error("Error calculating results:", error);
     } finally {
@@ -402,21 +82,31 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
 
   useEffect(() => {
     if (file) {
-      calculateResults();
+      calculateResultsCallback();
     }
-  }, [file, customPlans, calculateResults]);
+  }, [file, customPlans, calculateResultsCallback]);
 
-  const getBestPlan = () => {
-    if (results.length <= 1) return null;
-    // Find the plan with the highest savings (excluding the base plan)
-    const plansWithSavings = results.filter((plan) => plan.savings > 0);
-    if (plansWithSavings.length === 0) return null;
-    return plansWithSavings.reduce((best, current) =>
-      current.savings > best.savings ? current : best
-    );
+  const bestPlan = getBestPlan(results);
+
+  const getIconComponent = (iconName: string) => {
+    const iconProps = { className: "h-5 w-5" };
+    switch (iconName) {
+      case "calculator":
+        return <CalculatorIcon {...iconProps} />;
+      case "sun":
+        return <Sun {...iconProps} />;
+      case "moon":
+        return <Moon {...iconProps} />;
+      case "users":
+        return <Users {...iconProps} />;
+      case "trending-up":
+        return <TrendingUp {...iconProps} />;
+      case "clock":
+        return <Clock {...iconProps} />;
+      default:
+        return <CalculatorIcon {...iconProps} />;
+    }
   };
-
-  const bestPlan = getBestPlan();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -431,6 +121,48 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {metadata && (
+            <Card className="bg-muted/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  פרטי לקוח
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">שם לקוח:</span>
+                      <span>{metadata.customerName}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">כתובת:</span>
+                      <span>{metadata.customerAddress}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">קוד מונה:</span>
+                      <span>{metadata.meterCode}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">מספר מונה:</span>
+                      <span>{metadata.meterNumber}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">מספר חוזה:</span>
+                      <span>{metadata.contractNumber}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {isCalculating ? (
             <div className="text-center py-8">
               <div className="flex items-center justify-center gap-3 mb-4">
@@ -443,7 +175,6 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
             </div>
           ) : results.length > 0 ? (
             <>
-              {/* Best Plan Highlight */}
               {bestPlan && (
                 <Card className="border-primary bg-primary/5">
                   <CardHeader>
@@ -453,7 +184,7 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                   </CardHeader>
                   <CardContent className="text-center">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      {bestPlan.icon}
+                      {getIconComponent(bestPlan.icon)}
                       <h3 className="text-2xl font-bold">{bestPlan.name}</h3>
                     </div>
                     <p className="text-muted-foreground mb-4">
@@ -491,74 +222,144 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
 
               <Separator />
 
-              {/* Detailed Comparison */}
               <div>
                 <h3 className="text-lg font-semibold mb-4">
-                  השוואה מפורטת של כל המסלולים
+                  פירוט עלות לפי חודש
                 </h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>מסלול</TableHead>
-                      <TableHead>תיאור</TableHead>
-                      <TableHead className="text-right">עלות חודשית</TableHead>
-                      <TableHead className="text-right">חיסכון</TableHead>
-                      <TableHead className="text-right">אחוז חיסכון</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.map((plan, index) => (
-                      <TableRow
-                        key={index}
-                        className={plan === bestPlan ? "bg-primary/5" : ""}
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            {plan.icon}
-                            {plan.name}
-                            {plan === bestPlan && index > 0 && (
-                              <Badge variant="default" className="ml-2">
+                      <TableHead>חודש</TableHead>
+                      {results.map((plan, index) => (
+                        <TableHead key={index} className="text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            {getIconComponent(plan.icon)}
+                            <span className="text-xs">{plan.name}</span>
+                            {plan === bestPlan && (
+                              <Badge variant="default" className="text-xs">
                                 מומלץ
                               </Badge>
                             )}
-                            {index === 0 && (
-                              <Badge variant="outline" className="ml-2">
-                                בסיס
-                              </Badge>
-                            )}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {plan.description}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatCurrency(plan.totalCost)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {plan.savings > 0 ? (
-                            <span className="text-green-600">
-                              {formatCurrency(plan.savings)}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {plan.savingsPercentage > 0 ? (
-                            <span className="text-green-600 font-medium">
-                              {plan.savingsPercentage.toFixed(1)}%
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results[0]?.monthlyBreakdown.map(
+                      (monthData, monthIndex) => (
+                        <TableRow key={monthIndex}>
+                          <TableCell className="font-medium">
+                            <div>
+                              <div>{monthData.month}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {monthData.totalConsumption.toFixed(0)} קוט"ש
+                              </div>
+                            </div>
+                          </TableCell>
+                          {results.map((plan, planIndex) => {
+                            const monthlyPlan =
+                              plan.monthlyBreakdown[monthIndex];
+                            if (!monthlyPlan) return null;
+
+                            const planBreakdown = monthlyPlan.plans.find(
+                              (p) => p.name === plan.name
+                            );
+                            let monthlyCost = 0;
+                            let monthlySavings = 0;
+                            let monthlySavingsPercentage = 0;
+
+                            if (plan.name === "תעריף רגיל") {
+                              monthlyCost = monthlyPlan.baseCost;
+                              monthlySavings = 0;
+                              monthlySavingsPercentage = 0;
+                            } else if (planBreakdown) {
+                              monthlyCost = planBreakdown.cost;
+                              monthlySavings = planBreakdown.savings;
+                              monthlySavingsPercentage =
+                                planBreakdown.savingsPercentage;
+                            } else {
+                              monthlyCost = monthlyPlan.baseCost;
+                              monthlySavings = 0;
+                              monthlySavingsPercentage = 0;
+                            }
+
+                            return (
+                              <TableCell
+                                key={planIndex}
+                                className="text-center"
+                              >
+                                <div className="flex flex-col gap-1">
+                                  <div className="font-mono text-sm">
+                                    {formatCurrency(monthlyCost)}
+                                  </div>
+                                  {monthlySavings > 0 && (
+                                    <div className="text-xs text-green-600">
+                                      חיסכון: {formatCurrency(monthlySavings)}
+                                    </div>
+                                  )}
+                                  {monthlySavings > 0 && (
+                                    <div className="text-xs text-green-600 font-medium">
+                                      {monthlySavingsPercentage.toFixed(1)}%
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      )
+                    )}
+                    <TableRow className="bg-muted/50 font-semibold">
+                      <TableCell>
+                        <div>
+                          <div>ממוצע חודשי</div>
+                          <div className="text-xs text-muted-foreground">
+                            {results[0]?.monthlyBreakdown
+                              .reduce(
+                                (sum, month) => sum + month.totalConsumption,
+                                0
+                              )
+                              .toFixed(0)}{" "}
+                            קוט"ש
+                          </div>
+                        </div>
+                      </TableCell>
+                      {results.map((plan, planIndex) => {
+                        const avgMonthlyCost =
+                          plan.totalCost /
+                          (results[0]?.monthlyBreakdown.length || 1);
+                        const avgMonthlySavings =
+                          plan.savings /
+                          (results[0]?.monthlyBreakdown.length || 1);
+                        const avgMonthlySavingsPercentage =
+                          (avgMonthlySavings / avgMonthlyCost) * 100;
+
+                        return (
+                          <TableCell key={planIndex} className="text-center">
+                            <div className="flex flex-col gap-1">
+                              <div className="font-mono text-sm">
+                                {formatCurrency(avgMonthlyCost)}
+                              </div>
+                              {avgMonthlySavings > 0 && (
+                                <div className="text-xs text-green-600">
+                                  חיסכון: {formatCurrency(avgMonthlySavings)}
+                                </div>
+                              )}
+                              {avgMonthlySavings > 0 && (
+                                <div className="text-xs text-green-600 font-medium">
+                                  {avgMonthlySavingsPercentage.toFixed(1)}%
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
 
-              {/* Summary */}
               {bestPlan && (
                 <Card className="bg-muted/50">
                   <CardContent className="pt-6">
@@ -577,6 +378,87 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                   </CardContent>
                 </Card>
               )}
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">
+                  השוואה מפורטת של כל המסלולים (ממוצע חודשי)
+                </h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>מסלול</TableHead>
+                      <TableHead>תיאור</TableHead>
+                      <TableHead className="text-right">
+                        עלות חודשית ממוצעת
+                      </TableHead>
+                      <TableHead className="text-right">
+                        חיסכון חודשי ממוצע
+                      </TableHead>
+                      <TableHead className="text-right">אחוז חיסכון</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map((plan, index) => {
+                      const avgMonthlyCost =
+                        plan.totalCost /
+                        (results[0]?.monthlyBreakdown.length || 1);
+                      const avgMonthlySavings =
+                        plan.savings /
+                        (results[0]?.monthlyBreakdown.length || 1);
+
+                      return (
+                        <TableRow
+                          key={index}
+                          className={plan === bestPlan ? "bg-primary/5" : ""}
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {getIconComponent(plan.icon)}
+                              {plan.name}
+                              {plan === bestPlan && index > 0 && (
+                                <Badge variant="default" className="ml-2">
+                                  מומלץ
+                                </Badge>
+                              )}
+                              {index === 0 && (
+                                <Badge variant="outline" className="ml-2">
+                                  בסיס
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {plan.description}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatCurrency(avgMonthlyCost)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {avgMonthlySavings > 0 ? (
+                              <span className="text-green-600">
+                                {formatCurrency(avgMonthlySavings)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {plan.savingsPercentage > 0 ? (
+                              <span className="text-green-600 font-medium">
+                                {plan.savingsPercentage.toFixed(1)}%
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </>
           ) : null}
         </CardContent>

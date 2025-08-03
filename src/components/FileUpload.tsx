@@ -85,14 +85,14 @@ const FileUpload = ({ onFileSelect }: FileUploadProps) => {
   const loadExampleFile = async () => {
     setIsLoadingExample(true);
     try {
-      const response = await fetch("/example.xlsx");
+      const response = await fetch("/example.csv");
       if (!response.ok) {
         throw new Error("Failed to load example file");
       }
 
       const blob = await response.blob();
-      const file = new File([blob], "example.xlsx", {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      const file = new File([blob], "example.csv", {
+        type: "text/csv",
       });
 
       setSelectedFile(file);
@@ -100,7 +100,7 @@ const FileUpload = ({ onFileSelect }: FileUploadProps) => {
 
       toast({
         title: "קובץ דוגמה נטען בהצלחה!",
-        description: "example.xlsx - החישוב מתחיל...",
+        description: "example.csv - החישוב מתחיל...",
       });
     } catch (error) {
       console.error("Error loading example file:", error);
@@ -163,7 +163,7 @@ const FileUpload = ({ onFileSelect }: FileUploadProps) => {
               </h3>
 
               <p className="text-muted-foreground mb-6">
-                תומך בקבצי CSV, Excel (.xls, .xlsx)
+                תומך בקבצי CSV (מומלץ), Excel (.xls, .xlsx)
               </p>
 
               <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">

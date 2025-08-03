@@ -28,9 +28,17 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+interface CustomPlan {
+  name: string;
+  discount: number;
+  startHour: number;
+  endHour: number;
+  days: string[];
+}
+
 const Index = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [customPlans, setCustomPlans] = useState<any[]>([]);
+  const [customPlans, setCustomPlans] = useState<CustomPlan[]>([]);
   const [showCustomPlan, setShowCustomPlan] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -100,7 +108,7 @@ const Index = () => {
     setShowResults(true);
   };
 
-  const handleCustomPlanSelect = (customPlan: any[]) => {
+  const handleCustomPlanSelect = (customPlan: CustomPlan[]) => {
     setCustomPlans(customPlan);
     setShowCustomPlan(false);
   };
@@ -270,6 +278,9 @@ const Index = () => {
               </h2>
               <p className="text-lg text-muted-foreground">
                 העלה קובץ CSV או Excel עם נתוני הצריכה שלך
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                פורמט CSV מומלץ - תומך בקבצי דוח צריכה ישראלים
               </p>
             </div>
 
