@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Phone, FileText, AlertCircle } from "lucide-react";
+import { Monitor, FileText, AlertCircle } from "lucide-react";
 
 const HowToGetReport = () => {
   return (
@@ -9,8 +9,9 @@ const HowToGetReport = () => {
           איך מוציאים דוח צריכה?
         </h3>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          כל מה שצריך זה להתקשר לשירות לקוחות ולבקש מהם להוציא דו״ח צריכה, ואז
-          הם ישלחו לך למייל
+          אפשר להוציא אותו בקלות דרך האתר של חברת החשמל, אתה נכנס לחשבון שלך,
+          מבקש דוח במייל, ממלא את המייל שלך ואחרי כמה דקות מקבל מייל עם הקובץ
+          csv
         </p>
       </div>
 
@@ -19,7 +20,7 @@ const HowToGetReport = () => {
         <Card className="p-8 bg-gradient-to-r from-primary/5 to-success/5 border border-primary/20">
           <div className="text-center space-y-6">
             <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto">
-              <Phone className="w-8 h-8 text-primary-foreground" />
+              <Monitor className="w-8 h-8 text-primary-foreground" />
             </div>
 
             <div>
@@ -31,19 +32,19 @@ const HowToGetReport = () => {
                   <span className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
                     1
                   </span>
-                  <span>התקשר לשירות לקוחות</span>
+                  <span>היכנס לחשבון שלך באתר חברת החשמל</span>
                 </li>
                 <li className="flex items-center justify-center gap-3">
                   <span className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
                     2
                   </span>
-                  <span>בקש מהם להוציא דו״ח צריכה</span>
+                  <span>בקש דוח במייל</span>
                 </li>
                 <li className="flex items-center justify-center gap-3">
                   <span className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
                     3
                   </span>
-                  <span>הם ישלחו לך למייל</span>
+                  <span>מלא את המייל שלך וקבל את הקובץ CSV</span>
                 </li>
               </ol>
             </div>
@@ -51,7 +52,7 @@ const HowToGetReport = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-2 text-primary font-semibold">
                 <FileText className="w-5 h-5" />
-                <span>צריך לבקש באקסל ולנסות לכמה שיותר זמן אחורה</span>
+                <span>הקובץ יישלח בפורמט CSV וזמין תוך כמה דקות</span>
               </div>
 
               <div className="flex items-center justify-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg">

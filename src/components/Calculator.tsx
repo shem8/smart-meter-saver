@@ -196,7 +196,10 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                           עלות חודשית
                         </p>
                         <p className="text-2xl font-bold">
-                          {formatCurrency(bestPlan.totalCost)}
+                          {formatCurrency(
+                            bestPlan.totalCost /
+                              (results[0]?.monthlyBreakdown.length || 1)
+                          )}
                         </p>
                       </div>
                       <div>
@@ -204,7 +207,10 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                           חיסכון חודשי
                         </p>
                         <p className="text-2xl font-bold text-green-600">
-                          {formatCurrency(bestPlan.savings)}
+                          {formatCurrency(
+                            bestPlan.savings /
+                              (results[0]?.monthlyBreakdown.length || 1)
+                          )}
                         </p>
                       </div>
                       <div>
@@ -219,6 +225,108 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                   </CardContent>
                 </Card>
               )}
+
+              <Separator />
+
+              {bestPlan && (
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <h4 className="font-semibold mb-2">
+                        סיכום החיסכון השנתי
+                      </h4>
+                      <p className="text-2xl font-bold text-green-600">
+                        חיסכון של {formatCurrency(bestPlan.savings)} בשנה!
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        * החישוב מבוסס על נתוני הצריכה שהועלו ועשוי להשתנות
+                        בהתאם לשינויים בדפוסי הצריכה
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">
+                  השוואה מפורטת של כל המסלולים (ממוצע חודשי)
+                </h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>מסלול</TableHead>
+                      <TableHead>תיאור</TableHead>
+                      <TableHead className="text-right">
+                        עלות חודשית ממוצעת
+                      </TableHead>
+                      <TableHead className="text-right">
+                        חיסכון חודשי ממוצע
+                      </TableHead>
+                      <TableHead className="text-right">אחוז חיסכון</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map((plan, index) => {
+                      const avgMonthlyCost =
+                        plan.totalCost /
+                        (results[0]?.monthlyBreakdown.length || 1);
+                      const avgMonthlySavings =
+                        plan.savings /
+                        (results[0]?.monthlyBreakdown.length || 1);
+
+                      return (
+                        <TableRow
+                          key={index}
+                          className={plan === bestPlan ? "bg-primary/5" : ""}
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {getIconComponent(plan.icon)}
+                              {plan.name}
+                              {plan === bestPlan && index > 0 && (
+                                <Badge variant="default" className="ml-2">
+                                  מומלץ
+                                </Badge>
+                              )}
+                              {index === 0 && (
+                                <Badge variant="outline" className="ml-2">
+                                  בסיס
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {plan.description}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatCurrency(avgMonthlyCost)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {avgMonthlySavings > 0 ? (
+                              <span className="text-green-600">
+                                {formatCurrency(avgMonthlySavings)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {plan.savingsPercentage > 0 ? (
+                              <span className="text-green-600 font-medium">
+                                {plan.savingsPercentage.toFixed(1)}%
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
 
               <Separator />
 
@@ -315,12 +423,12 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                         <div>
                           <div>ממוצע חודשי</div>
                           <div className="text-xs text-muted-foreground">
-                            {results[0]?.monthlyBreakdown
-                              .reduce(
+                            {(
+                              results[0]?.monthlyBreakdown.reduce(
                                 (sum, month) => sum + month.totalConsumption,
                                 0
-                              )
-                              .toFixed(0)}{" "}
+                              ) / (results[0]?.monthlyBreakdown.length || 1)
+                            ).toFixed(0)}{" "}
                             קוט"ש
                           </div>
                         </div>
@@ -356,106 +464,6 @@ const Calculator = ({ file, selectedPlan, customPlans }: CalculatorProps) => {
                         );
                       })}
                     </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-
-              {bestPlan && (
-                <Card className="bg-muted/50">
-                  <CardContent className="pt-6">
-                    <div className="text-center">
-                      <h4 className="font-semibold mb-2">
-                        סיכום החיסכון השנתי
-                      </h4>
-                      <p className="text-2xl font-bold text-green-600">
-                        חיסכון של {formatCurrency(bestPlan.savings * 12)} בשנה!
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        * החישוב מבוסס על נתוני הצריכה שהועלו ועשוי להשתנות
-                        בהתאם לשינויים בדפוסי הצריכה
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4">
-                  השוואה מפורטת של כל המסלולים (ממוצע חודשי)
-                </h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>מסלול</TableHead>
-                      <TableHead>תיאור</TableHead>
-                      <TableHead className="text-right">
-                        עלות חודשית ממוצעת
-                      </TableHead>
-                      <TableHead className="text-right">
-                        חיסכון חודשי ממוצע
-                      </TableHead>
-                      <TableHead className="text-right">אחוז חיסכון</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.map((plan, index) => {
-                      const avgMonthlyCost =
-                        plan.totalCost /
-                        (results[0]?.monthlyBreakdown.length || 1);
-                      const avgMonthlySavings =
-                        plan.savings /
-                        (results[0]?.monthlyBreakdown.length || 1);
-
-                      return (
-                        <TableRow
-                          key={index}
-                          className={plan === bestPlan ? "bg-primary/5" : ""}
-                        >
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              {getIconComponent(plan.icon)}
-                              {plan.name}
-                              {plan === bestPlan && index > 0 && (
-                                <Badge variant="default" className="ml-2">
-                                  מומלץ
-                                </Badge>
-                              )}
-                              {index === 0 && (
-                                <Badge variant="outline" className="ml-2">
-                                  בסיס
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {plan.description}
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {formatCurrency(avgMonthlyCost)}
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {avgMonthlySavings > 0 ? (
-                              <span className="text-green-600">
-                                {formatCurrency(avgMonthlySavings)}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {plan.savingsPercentage > 0 ? (
-                              <span className="text-green-600 font-medium">
-                                {plan.savingsPercentage.toFixed(1)}%
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
                   </TableBody>
                 </Table>
               </div>
